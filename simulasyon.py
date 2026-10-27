@@ -241,3 +241,4 @@ def log_yaz(log, dosya_yolu):
 
 def harita_metni(durum):
     return f"Konum: ({durum['x']}, {durum['y']}) | Yön: {durum['yon']} | Batarya: {durum['batarya']}"
+

@@ -147,4 +147,63 @@ class DepoRobotuArayuzu:
         self.lbl_log.config(text="Log: Sıfırlandı.")
         self.btn_adim.config(state=tk.NORMAL)
         self.btn_tumunu.config(state=tk.NORMAL)
+
+def haritayi_ciz(self):
+        self.canvas.delete("all")
+        if not self.izgara: return
+        
+        satir_sayisi = len(self.izgara)
+        sutun_sayisi = len(self.izgara[0])
+        
+        hucre_w = 500 / sutun_sayisi
+        hucre_h = 400 / satir_sayisi
+        
+        for y in range(satir_sayisi):
+            for x in range(sutun_sayisi):
+                hucre = self.izgara[y][x]
+                x1 = x * hucre_w
+                y1 = y * hucre_h
+                x2 = x1 + hucre_w
+                y2 = y1 + hucre_h
+                
+                renk = "white"
+                if hucre == '#': renk = "gray"
+                elif hucre == 'K': renk = "orange"
+                elif hucre == 'T': renk = "green"
+                elif hucre == 'S': renk = "yellow"
+                
+                self.canvas.create_rectangle(x1, y1, x2, y2, fill=renk, outline="black")
+                
+                if hucre in ['K', 'T', 'S']:
+                    self.canvas.create_text((x1+x2)/2, (y1+y2)/2, text=hucre, font=("Arial", 12, "bold"))
+                    
+        if self.durum:
+            rx = self.durum["x"] * hucre_w
+            ry = self.durum["y"] * hucre_h
+            yon = self.durum["yon"]
+            
+            cx, cy = rx + hucre_w/2, ry + hucre_h/2
+            offset = min(hucre_w, hucre_h) / 3
+            
+            if yon == "K":
+                koordinatlar = [cx, cy-offset, cx-offset, cy+offset, cx+offset, cy+offset]
+            elif yon == "G":
+                koordinatlar = [cx, cy+offset, cx-offset, cy-offset, cx+offset, cy-offset]
+            elif yon == "D":
+                koordinatlar = [cx+offset, cy, cx-offset, cy-offset, cx-offset, cy+offset]
+            else: 
+                koordinatlar = [cx-offset, cy, cx+offset, cy-offset, cx+offset, cy+offset]
+                
+            self.canvas.create_polygon(koordinatlar, fill="blue", outline="black")
+
+            if self.carpisma_efekti:
+                self.canvas.create_rectangle(
+                    rx + 2, ry + 2, rx + hucre_w - 2, ry + hucre_h - 2,
+                    outline="red", width=5
+                )
+                self.canvas.create_rectangle(150, 8, 350, 38, fill="red", outline="red")
+                self.canvas.create_text(
+                    250, 23, text="ÇARPIŞMA!", fill="white",
+                    font=("Arial", 14, "bold")
+                )
          
