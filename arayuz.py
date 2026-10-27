@@ -259,3 +259,44 @@ class DepoRobotuArayuzu:
         self.komutu_uygula(komut, f"Tuş {event.keysym}: {komut[0]}")
 
         return "break"
+
+    def carpisma_efektini_kapat(self, surum):
+        if surum == self.carpisma_efekt_surumu:
+            self.carpisma_efekti = False
+            self.haritayi_ciz()
+
+    def komutu_uygula(self, komut, komut_metin):
+        teslim_sayisi = self.durum["teslim"]
+        olay = simulasyon.komut_uygula(self.durum, komut, self.izgara)
+        if olay == "CARPISMA":
+            self.carpisma_efekti = True
+            self.carpisma_efekt_surumu += 1
+            self.root.after(
+                500,
+                self.carpisma_efektini_kapat,
+                self.carpisma_efekt_surumu
+            )
+        self.haritayi_ciz()
+        self.bilgileri_guncelle(olay, komut_metin)
+
+        if self.durum["teslim"] > teslim_sayisi:
+            self.gorev_tamamlandi = True
+            self.btn_adim.config(state=tk.DISABLED)
+            self.btn_tumunu.config(state=tk.DISABLED)
+            self.btn_sifirla.config(state=tk.DISABLED)
+            self.lbl_log.config(text="Görev başarılı! Sonraki harita yükleniyor.")
+            messagebox.showinfo("Görev Başarılı", "Kutuyu teslim alanına bıraktın!")
+            self.sonraki_haritayi_yukle()
+        elif self.durum["oyun_bitti"]:
+            messagebox.showwarning(
+                "Çarpışma Sınırı",
+                f"En fazla {simulasyon.MAX_CARPISMA} çarpışma hakkı var. Görev sona erdi."
+            )
+            self.btn_adim.config(state=tk.DISABLED)
+            self.btn_tumunu.config(state=tk.DISABLED)
+        elif self.durum["batarya_bitti"]:
+            messagebox.showwarning("Uyarı", "Batarya bitti!")
+            self.btn_adim.config(state=tk.DISABLED)
+            self.btn_tumunu.config(state=tk.DISABLED)
+
+        
