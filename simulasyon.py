@@ -94,3 +94,27 @@ def yeni_durum(izgara, baslangic, ayarlar):
         "carpisma_cezasi": ayarlar.get("carpisma_cezasi", 5)
     }
 
+def komut_uygula(durum, komut, izgara):
+    if durum["batarya_bitti"] or durum["oyun_bitti"]:
+        return "BITTI"
+        
+    tip, deger = komut
+    olay = "GECERSIZ"
+    
+    if tip in ["SAG", "SOL"]:
+        durum["toplam_adim"] += 1
+        maliyet = durum["donus_maliyeti"]
+        if durum["batarya"] < maliyet:
+            durum["batarya_bitti"] = True
+            return "BATARYA_YOK"
+            
+        durum["batarya"] -= maliyet
+        yonler = ["K", "D", "G", "B"]
+        idx = yonler.index(durum["yon"])
+        
+        if tip == "SAG":
+            durum["yon"] = yonler[(idx + 1) % 4]
+        else:
+            durum["yon"] = yonler[(idx - 1) % 4]
+        olay = "DONUS"
+
