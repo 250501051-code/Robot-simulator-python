@@ -90,3 +90,32 @@ class DepoRobotuArayuzu:
         self.lbl_log.pack(fill=tk.X)
 
         self.root.bind_all("<KeyPress>", self.tus_kontrolu)
+
+def dosyalari_yukle(self):
+        try:
+            harita_dosyalari = sorted((self.proje_klasoru / "map_havuzu").glob("*.txt"))
+            if not harita_dosyalari:
+                raise ValueError("map_havuzu klasöründe .txt haritası bulunamadı.")
+
+            self.harita_havuzu = []
+            for dosya_yolu in harita_dosyalari:
+                izgara, baslangic = simulasyon.harita_oku(str(dosya_yolu))
+                self.harita_havuzu.append({
+                    "ad": dosya_yolu.stem,
+                    "izgara": izgara,
+                    "baslangic": baslangic
+                })
+
+            self.ayarlar = simulasyon.ayarlari_oku(str(self.proje_klasoru / "ayarlar.json"))
+            self.komutlar, self.hatalar = simulasyon.komutlari_oku(str(self.proje_klasoru / "komutlar.txt"))
+            
+            self.harita_sec(0)
+            self.sifirla()
+            
+            messagebox.showinfo("Başarılı", "Dosyalar başarıyla yüklendi!")
+            self.btn_adim.config(state=tk.NORMAL)
+            self.btn_tumunu.config(state=tk.NORMAL)
+            self.btn_sifirla.config(state=tk.NORMAL)
+        except Exception as e:
+            messagebox.showerror("Hata", f"Yükleme hatası: {str(e)}")
+            
