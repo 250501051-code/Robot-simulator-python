@@ -298,5 +298,31 @@ class DepoRobotuArayuzu:
             messagebox.showwarning("Uyarı", "Batarya bitti!")
             self.btn_adim.config(state=tk.DISABLED)
             self.btn_tumunu.config(state=tk.DISABLED)
+    def bir_adim_ilerle(self):
+        if (
+            self.mevcut_adim < len(self.komutlar)
+            and not self.durum["batarya_bitti"]
+            and not self.durum["oyun_bitti"]
+            and not self.gorev_tamamlandi
+        ):
+            komut = self.komutlar[self.mevcut_adim]
+            self.mevcut_adim += 1
+            komut_metin = f"{komut[0]} {komut[1] if komut[1] is not None else ''}".strip()
+            self.komutu_uygula(komut, f"Adım {self.mevcut_adim}: {komut_metin}")
+                
+    def tumunu_calistir(self):
+        baslangic_haritasi = self.mevcut_harita
+        while (
+            self.mevcut_adim < len(self.komutlar)
+            and not self.durum["batarya_bitti"]
+            and not self.durum["oyun_bitti"]
+            and not self.gorev_tamamlandi
+            and self.mevcut_harita == baslangic_haritasi
+        ):
+            self.bir_adim_ilerle()
+            self.root.update()
 
-        
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = DepoRobotuArayuzu(root)
+    root.mainloop()
