@@ -38,3 +38,7 @@ def harita_oku(dosya_yolu):
         raise ValueError("Haritada robot (R) bulunamadı!")
         
     return izgara, robot_konumu
+
+def ayarlari_oku(dosya_yolu):
+    with open(dosya_yolu, "r", encoding="utf-8") as f:
+        return json.load(f)
