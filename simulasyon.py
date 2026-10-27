@@ -228,3 +228,16 @@ def simulasyonu_calistir(izgara, baslangic, komutlar, ayarlar):
     }
     
     return sonuc, log
+
+def sonuc_yaz(sonuc, dosya_yolu):
+    with open(dosya_yolu, "w", encoding="utf-8") as f:
+        json.dump(sonuc, f, indent=4, ensure_ascii=False)
+
+def log_yaz(log, dosya_yolu):
+    with open(dosya_yolu, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["adim", "komut", "x", "y", "yon", "batarya", "olay"])
+        writer.writeheader()
+        writer.writerows(log)
+
+def harita_metni(durum):
+    return f"Konum: ({durum['x']}, {durum['y']}) | Yön: {durum['yon']} | Batarya: {durum['batarya']}"
