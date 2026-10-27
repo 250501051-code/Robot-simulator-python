@@ -43,3 +43,33 @@ def ayarlari_oku(dosya_yolu):
     with open(dosya_yolu, "r", encoding="utf-8") as f:
         return json.load(f)
 
+def komutlari_oku(dosya_yolu):
+    komutlar = []
+    hatalar = []
+    
+    if not os.path.exists(dosya_yolu):
+        return komutlar, hatalar
+        
+    with open(dosya_yolu, "r", encoding="utf-8") as f:
+        for satir_no, satir in enumerate(f, start=1):
+            temiz_satir = satir.strip()
+            if not temiz_satir:
+                continue
+                
+            parcalar = temiz_satir.split()
+            komut = parcalar[0].upper()
+            
+            if komut in ["SAG", "SOL", "AL", "BIRAK", "SARJ"]:
+                if len(parcalar) == 1:
+                    komutlar.append((komut, None))
+                else:
+                    hatalar.append({"satir": satir_no, "icerik": temiz_satir, "neden": "Fazla parametre"})
+            elif komut == "ILERI":
+                if len(parcalar) == 2 and parcalar[1].isdecimal() and int(parcalar[1]) > 0:
+                    komutlar.append((komut, int(parcalar[1])))
+                else:
+                    hatalar.append({"satir": satir_no, "icerik": temiz_satir, "neden": "Geçersiz ILERI parametresi"})
+            else:
+                hatalar.append({"satir": satir_no, "icerik": temiz_satir, "neden": "Bilinmeyen komut"})
+                
+    return komutlar, hatalar
