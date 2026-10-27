@@ -117,4 +117,69 @@ def komut_uygula(durum, komut, izgara):
         else:
             durum["yon"] = yonler[(idx - 1) % 4]
         olay = "DONUS"
+        
+    elif tip == "ILERI":
+        hareket_maliyeti = durum["adim_maliyeti"] * (durum["yuk_carpani"] if durum["yuk"] == 1 else 1)
+        
+        for _ in range(deger):
+            durum["toplam_adim"] += 1
+            if durum["batarya"] < hareket_maliyeti:
+                durum["batarya_bitti"] = True
+                return "BATARYA_YOK"
+                
+            yeni_x, yeni_y = durum["x"], durum["y"]
+            if durum["yon"] == "K": yeni_y -= 1
+            elif durum["yon"] == "G": yeni_y += 1
+            elif durum["yon"] == "D": yeni_x += 1
+            elif durum["yon"] == "B": yeni_x -= 1
+            
+            if (yeni_y < 0 or yeni_y >= len(izgara) or 
+                yeni_x < 0 or yeni_x >= len(izgara[0]) or 
+                izgara[yeni_y][yeni_x] == '#'):
+                
+                durum["carpisma"] = min(durum["carpisma"] + 1, MAX_CARPISMA)
+                durum["batarya"] -= durum["carpisma_cezasi"]
+                if durum["carpisma"] >= MAX_CARPISMA:
+                    durum["oyun_bitti"] = True
+                if durum["batarya"] <= 0:
+                    durum["batarya"] = 0
+                    durum["batarya_bitti"] = True
+                olay = "CARPISMA"
+                break 
+            else:
+                durum["batarya"] -= hareket_maliyeti
+                durum["x"], durum["y"] = yeni_x, yeni_y
+                olay = "HAREKET"
 
+                konum = (durum["x"], durum["y"])
+                durum["ziyaretler"][konum] = durum["ziyaretler"].get(konum, 0) + 1
+
+                if durum["batarya"] == 0:
+                    durum["batarya_bitti"] = True
+                    break
+               
+    elif tip == "AL":
+        durum["toplam_adim"] += 1
+        if izgara[durum["y"]][durum["x"]] == 'K' and durum["yuk"] == False:
+            durum["yuk"] = True
+            izgara[durum["y"]][durum["x"]] = ' '
+            olay = "KUTU_ALINDI"
+            
+    elif tip == "BIRAK":
+        durum["toplam_adim"] += 1
+        if durum["yuk"] == True:
+            durum["yuk"] = False
+            if izgara[durum["y"]][durum["x"]] == 'T':
+                durum["teslim"] += 1
+                olay = "TESLIM_EDILDI"
+            else:
+                izgara[durum["y"]][durum["x"]] = 'K'
+                olay = "KUTU_BIRAKILDI"
+                
+    elif tip == "SARJ":
+        durum["toplam_adim"] += 1
+        if izgara[durum["y"]][durum["x"]] == 'S':
+            durum["batarya"] = durum["kapasite"]
+            olay = "SARJ_OLDU"
+            
+    return olay
