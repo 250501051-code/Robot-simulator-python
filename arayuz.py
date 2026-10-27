@@ -118,4 +118,4 @@ def dosyalari_yukle(self):
             self.btn_sifirla.config(state=tk.NORMAL)
         except Exception as e:
             messagebox.showerror("Hata", f"Yükleme hatası: {str(e)}")
-            
+          
