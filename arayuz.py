@@ -91,7 +91,7 @@ class DepoRobotuArayuzu:
 
         self.root.bind_all("<KeyPress>", self.tus_kontrolu)
 
-def dosyalari_yukle(self):
+    def dosyalari_yukle(self):
         try:
             harita_dosyalari = sorted((self.proje_klasoru / "map_havuzu").glob("*.txt"))
             if not harita_dosyalari:
@@ -118,4 +118,33 @@ def dosyalari_yukle(self):
             self.btn_sifirla.config(state=tk.NORMAL)
         except Exception as e:
             messagebox.showerror("Hata", f"Yükleme hatası: {str(e)}")
-          
+
+    def harita_sec(self, indeks):
+        self.mevcut_harita = indeks
+        harita = self.harita_havuzu[indeks]
+        self.izgara = copy.deepcopy(harita["izgara"])
+        self.baslangic = harita["baslangic"]
+        self.orijinal_izgara = copy.deepcopy(self.izgara)
+        self.lbl_harita.config(
+            text=f"Harita: {harita['ad']} ({indeks + 1}/{len(self.harita_havuzu)})"
+        )
+
+    def sonraki_haritayi_yukle(self):
+        sonraki_indeks = (self.mevcut_harita + 1) % len(self.harita_havuzu)
+        self.harita_sec(sonraki_indeks)
+        self.sifirla()
+        self.lbl_log.config(text="Log: Yeni görev başladı.")
+
+    def sifirla(self):
+        self.izgara = copy.deepcopy(self.orijinal_izgara)
+        self.durum = simulasyon.yeni_durum(self.izgara, self.baslangic, self.ayarlar)
+        self.mevcut_adim = 0
+        self.gorev_tamamlandi = False
+        self.carpisma_efekti = False
+        self.carpisma_efekt_surumu += 1
+        self.haritayi_ciz()
+        self.bilgileri_guncelle()
+        self.lbl_log.config(text="Log: Sıfırlandı.")
+        self.btn_adim.config(state=tk.NORMAL)
+        self.btn_tumunu.config(state=tk.NORMAL)
+         
