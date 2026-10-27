@@ -148,7 +148,7 @@ class DepoRobotuArayuzu:
         self.btn_adim.config(state=tk.NORMAL)
         self.btn_tumunu.config(state=tk.NORMAL)
 
-def haritayi_ciz(self):
+    def haritayi_ciz(self):
         self.canvas.delete("all")
         if not self.izgara: return
         
@@ -206,4 +206,56 @@ def haritayi_ciz(self):
                     250, 23, text="ÇARPIŞMA!", fill="white",
                     font=("Arial", 14, "bold")
                 )
-         
+            
+    def bilgileri_guncelle(self, olay="", komut_metin=None):
+        if not self.durum: return
+        
+        self.lbl_batarya.config(text=f"Batarya: {self.durum['batarya']} / {self.durum['kapasite']}")
+        self.lbl_yon.config(text=f"Yön: {self.durum['yon']}")
+        self.lbl_yuk.config(text=f"Yük: {'Var' if self.durum['yuk'] == 1 else 'Yok'}")
+        self.lbl_teslim.config(text=f"Teslim: {self.durum['teslim']}")
+        self.lbl_carpisma.config(
+            text=f"Çarpışma: {self.durum['carpisma']} / {simulasyon.MAX_CARPISMA}"
+        )
+        
+        if self.mevcut_adim < len(self.komutlar):
+            k = self.komutlar[self.mevcut_adim]
+            siradaki_metin = f"{k[0]} {k[1] if k[1] else ''}".strip()
+            self.lbl_siradaki.config(text=f"Sıradaki: {siradaki_metin}")
+        else:
+            self.lbl_siradaki.config(text="Sıradaki: BİTTİ")
+            
+        if olay:
+            self.lbl_log.config(text=f"{komut_metin} -> ({self.durum['x']}, {self.durum['y']}) {olay}")
+
+    def tus_kontrolu(self, event):
+        tus = event.keysym.lower()
+        komutlar = {
+            "w": ("ILERI", 1),
+            "up": ("ILERI", 1),
+            "a": ("SOL", None),
+            "left": ("SOL", None),
+            "d": ("SAG", None),
+            "right": ("SAG", None),
+            "e": ("AL", None),
+            "b": ("BIRAK", None),
+            "c": ("SARJ", None)
+        }
+
+        if tus in ("space", "return"):
+            self.bir_adim_ilerle()
+            return "break"
+
+        komut = komutlar.get(tus)
+        if (
+            komut is None
+            or self.durum is None
+            or self.durum["batarya_bitti"]
+            or self.durum["oyun_bitti"]
+            or self.gorev_tamamlandi
+        ):
+            return
+
+        self.komutu_uygula(komut, f"Tuş {event.keysym}: {komut[0]}")
+
+        return "break"
