@@ -73,3 +73,24 @@ def komutlari_oku(dosya_yolu):
                 hatalar.append({"satir": satir_no, "icerik": temiz_satir, "neden": "Bilinmeyen komut"})
                 
     return komutlar, hatalar
+
+def yeni_durum(izgara, baslangic, ayarlar):
+    return {
+        "x": baslangic[0],
+        "y": baslangic[1],
+        "yon": ayarlar.get("baslangic_yonu", "D"),
+        "batarya": ayarlar.get("batarya_kapasitesi", 100),
+        "yuk": 0, # 0: Yok, 1: Kutu var
+        "teslim": 0,
+        "carpisma": 0,
+        "toplam_adim": 0,
+        "batarya_bitti": False,
+        "oyun_bitti": False,
+        "ziyaretler": {(baslangic[0], baslangic[1]): 1},
+        "kapasite": ayarlar.get("batarya_kapasitesi", 100),
+        "adim_maliyeti": ayarlar.get("adim_maliyeti", 2),
+        "yuk_carpani": ayarlar.get("yuk_carpani", 2),
+        "donus_maliyeti": ayarlar.get("donus_maliyeti", 1),
+        "carpisma_cezasi": ayarlar.get("carpisma_cezasi", 5)
+    }
+
