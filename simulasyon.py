@@ -183,3 +183,48 @@ def komut_uygula(durum, komut, izgara):
             olay = "SARJ_OLDU"
             
     return olay
+
+def simulasyonu_calistir(izgara, baslangic, komutlar, ayarlar):
+    durum = yeni_durum(izgara, baslangic, ayarlar)
+    log = []
+    
+    for adim_no, komut in enumerate(komutlar, start=1):
+        if durum["batarya_bitti"] or durum["oyun_bitti"]:
+            break
+            
+        olay = komut_uygula(durum, komut, izgara)
+        
+        log.append({
+            "adim": adim_no,
+            "komut": f"{komut[0]} {komut[1] if komut[1] is not None else ''}".strip(),
+            "x": durum["x"],
+            "y": durum["y"],
+            "yon": durum["yon"],
+            "batarya": durum["batarya"],
+            "olay": olay
+        })
+        
+    en_cok_ziyaret = (durum["x"], durum["y"])
+    en_yuksek = -1
+    
+    for (x, y), sayi in durum["ziyaretler"].items():
+        if sayi > en_yuksek:
+            en_yuksek = sayi
+            en_cok_ziyaret = (x, y)
+        elif sayi == en_yuksek:
+            if y < en_cok_ziyaret[1] or (y == en_cok_ziyaret[1] and x < en_cok_ziyaret[0]):
+                en_cok_ziyaret = (x, y)
+                
+    sonuc = {
+        "konum": [durum["x"], durum["y"]],
+        "yon": durum["yon"],
+        "batarya": durum["batarya"],
+        "yuk": durum["yuk"],
+        "teslim": durum["teslim"],
+        "carpisma": durum["carpisma"],
+        "toplam_adim": durum["toplam_adim"],
+        "batarya_bitti": durum["batarya_bitti"],
+        "en_cok_ziyaret_edilen": list(en_cok_ziyaret)
+    }
+    
+    return sonuc, log
