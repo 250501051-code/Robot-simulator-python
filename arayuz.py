@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import filedialog, messagebox
 import simulasyon
 import copy
 from pathlib import Path
@@ -19,6 +19,7 @@ class DepoRobotuArayuzu:
         self.mevcut_adim = 0
         self.harita_havuzu = []
         self.mevcut_harita = 0
+        self.toplam_kutu = 0
         self.gorev_tamamlandi = False
         self.carpisma_efekti = False
         self.carpisma_efekt_surumu = 0
@@ -27,7 +28,7 @@ class DepoRobotuArayuzu:
         self.ust_panel = tk.Frame(self.root)
         self.ust_panel.pack(pady=10)
         
-        self.btn_yukle = tk.Button(self.ust_panel, text="Dosyaları Yükle", command=self.dosyalari_yukle)
+        self.btn_yukle = tk.Button(self.ust_panel, text="Dosya Yükle", command=self.dosyalari_yukle)
         self.btn_yukle.grid(row=0, column=0, padx=5)
         
         self.btn_adim = tk.Button(self.ust_panel, text="Adım", command=self.bir_adim_ilerle, state=tk.DISABLED)
@@ -92,22 +93,40 @@ class DepoRobotuArayuzu:
         self.root.bind_all("<KeyPress>", self.tus_kontrolu)
 
     def dosyalari_yukle(self):
+        secilen_klasor = filedialog.askdirectory(
+            title="Yüklenecek veri klasörünü seçin",
+            initialdir=self.proje_klasoru,
+        )
+        if not secilen_klasor:
+            return
+
         try:
-            harita_dosyalari = sorted((self.proje_klasoru / "map_havuzu").glob("*.txt"))
-            if not harita_dosyalari:
-                raise ValueError("map_havuzu klasöründe .txt haritası bulunamadı.")
+            veri_klasoru = Path(secilen_klasor)
+            ayarlar_yolu = veri_klasoru / "ayarlar.json"
+            harita_yolu = veri_klasoru / "harita.txt"
+            komutlar_yolu = veri_klasoru / "komutlar.txt"
+            eksik_dosyalar = [
+                yol.name for yol in (ayarlar_yolu, harita_yolu, komutlar_yolu)
+                if not yol.is_file()
+            ]
+            if eksik_dosyalar:
+                raise ValueError(
+                    "Seçilen dosyanın klasöründe şu dosyalar bulunamadı: "
+                    + ", ".join(eksik_dosyalar)
+                )
 
-            self.harita_havuzu = []
-            for dosya_yolu in harita_dosyalari:
-                izgara, baslangic = simulasyon.harita_oku(str(dosya_yolu))
-                self.harita_havuzu.append({
-                    "ad": dosya_yolu.stem,
-                    "izgara": izgara,
-                    "baslangic": baslangic
-                })
+            izgara, baslangic = simulasyon.harita_oku(str(harita_yolu))
+            ayarlar = simulasyon.ayarlari_oku(str(ayarlar_yolu))
+            komutlar, hatalar = simulasyon.komutlari_oku(str(komutlar_yolu))
 
-            self.ayarlar = simulasyon.ayarlari_oku(str(self.proje_klasoru / "ayarlar.json"))
-            self.komutlar, self.hatalar = simulasyon.komutlari_oku(str(self.proje_klasoru / "komutlar.txt"))
+            self.harita_havuzu = [{
+                "ad": veri_klasoru.name,
+                "izgara": izgara,
+                "baslangic": baslangic
+            }]
+            self.ayarlar = ayarlar
+            self.komutlar = komutlar
+            self.hatalar = hatalar
             
             self.harita_sec(0)
             self.sifirla()
@@ -125,6 +144,11 @@ class DepoRobotuArayuzu:
         self.izgara = copy.deepcopy(harita["izgara"])
         self.baslangic = harita["baslangic"]
         self.orijinal_izgara = copy.deepcopy(self.izgara)
+        self.toplam_kutu = sum(
+            hucre == 'K'
+            for satir in self.orijinal_izgara
+            for hucre in satir
+        )
         self.lbl_harita.config(
             text=f"Harita: {harita['ad']} ({indeks + 1}/{len(self.harita_havuzu)})"
         )
@@ -213,7 +237,9 @@ class DepoRobotuArayuzu:
         self.lbl_batarya.config(text=f"Batarya: {self.durum['batarya']} / {self.durum['kapasite']}")
         self.lbl_yon.config(text=f"Yön: {self.durum['yon']}")
         self.lbl_yuk.config(text=f"Yük: {'Var' if self.durum['yuk'] == 1 else 'Yok'}")
-        self.lbl_teslim.config(text=f"Teslim: {self.durum['teslim']}")
+        self.lbl_teslim.config(
+            text=f"Teslim: {self.durum['teslim']} / {self.toplam_kutu}"
+        )
         self.lbl_carpisma.config(
             text=f"Çarpışma: {self.durum['carpisma']} / {simulasyon.MAX_CARPISMA}"
         )
@@ -280,13 +306,22 @@ class DepoRobotuArayuzu:
         self.bilgileri_guncelle(olay, komut_metin)
 
         if self.durum["teslim"] > teslim_sayisi:
-            self.gorev_tamamlandi = True
-            self.btn_adim.config(state=tk.DISABLED)
-            self.btn_tumunu.config(state=tk.DISABLED)
-            self.btn_sifirla.config(state=tk.DISABLED)
-            self.lbl_log.config(text="Görev başarılı! Sonraki harita yükleniyor.")
-            messagebox.showinfo("Görev Başarılı", "Kutuyu teslim alanına bıraktın!")
-            self.sonraki_haritayi_yukle()
+            kalan_kutu = self.toplam_kutu - self.durum["teslim"]
+            if kalan_kutu == 0:
+                self.gorev_tamamlandi = True
+                self.btn_adim.config(state=tk.DISABLED)
+                self.btn_tumunu.config(state=tk.DISABLED)
+                self.btn_sifirla.config(state=tk.DISABLED)
+                self.lbl_log.config(text="Tüm kutular teslim edildi. Oyun tamamlandı.")
+                messagebox.showinfo(
+                    "Oyun Tamamlandı",
+                    "Tüm kutuları teslim alanına bıraktın!"
+                )
+            else:
+                self.lbl_log.config(
+                    text=f"{self.durum['teslim']} / {self.toplam_kutu} kutu teslim edildi. "
+                    f"Kalan kutu: {kalan_kutu}."
+                )
         elif self.durum["oyun_bitti"]:
             messagebox.showwarning(
                 "Çarpışma Sınırı",
