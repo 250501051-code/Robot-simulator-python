@@ -204,6 +204,9 @@ def simulasyonu_calistir(izgara, baslangic, komutlar, ayarlar):
             "olay": olay
         })
         
+    return sonuc_olustur(durum), log
+
+def sonuc_olustur(durum):
     en_cok_ziyaret = (durum["x"], durum["y"])
     en_yuksek = -1
     
@@ -226,8 +229,7 @@ def simulasyonu_calistir(izgara, baslangic, komutlar, ayarlar):
         "batarya_bitti": durum["batarya_bitti"],
         "en_cok_ziyaret_edilen": list(en_cok_ziyaret)
     }
-    
-    return sonuc, log
+    return sonuc
 
 def sonuc_yaz(sonuc, dosya_yolu):
     with open(dosya_yolu, "w", encoding="utf-8") as f:
@@ -239,6 +241,14 @@ def log_yaz(log, dosya_yolu):
         writer.writeheader()
         writer.writerows(log)
 
+def log_satiri_ekle(log_satiri, dosya_yolu):
+    alanlar = ["adim", "komut", "x", "y", "yon", "batarya", "olay"]
+    dosya_bos = not os.path.exists(dosya_yolu) or os.path.getsize(dosya_yolu) == 0
+    with open(dosya_yolu, "a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=alanlar)
+        if dosya_bos:
+            writer.writeheader()
+        writer.writerow(log_satiri)
+
 def harita_metni(durum):
     return f"Konum: ({durum['x']}, {durum['y']}) | Yön: {durum['yon']} | Batarya: {durum['batarya']}"
-

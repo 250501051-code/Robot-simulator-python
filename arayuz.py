@@ -17,6 +17,8 @@ class DepoRobotuArayuzu:
         self.hatalar = []
         self.durum = None
         self.mevcut_adim = 0
+        self.tumunu_calistirma_suruyor = False
+        self.tumunu_calistirma_after_id = None
         self.harita_havuzu = []
         self.mevcut_harita = 0
         self.toplam_kutu = 0
@@ -24,6 +26,7 @@ class DepoRobotuArayuzu:
         self.carpisma_efekti = False
         self.carpisma_efekt_surumu = 0
         self.proje_klasoru = Path(__file__).resolve().parent
+        self.log_dosyasi = self.proje_klasoru.parent / "log.csv"
         
         self.ust_panel = tk.Frame(self.root)
         self.ust_panel.pack(pady=10)
@@ -68,6 +71,9 @@ class DepoRobotuArayuzu:
             font=("Arial", 12)
         )
         self.lbl_carpisma.pack(anchor="w", pady=5)
+
+        self.lbl_adim = tk.Label(self.bilgi_paneli, text="Adım: 0", bg="lightgray", font=("Arial", 12))
+        self.lbl_adim.pack(anchor="w", pady=5)
         
         self.lbl_siradaki = tk.Label(self.bilgi_paneli, text="Sıradaki: -", bg="lightgray", font=("Arial", 12))
         self.lbl_siradaki.pack(anchor="w", pady=5)
@@ -119,6 +125,15 @@ class DepoRobotuArayuzu:
             ayarlar = simulasyon.ayarlari_oku(str(ayarlar_yolu))
             komutlar, hatalar = simulasyon.komutlari_oku(str(komutlar_yolu))
 
+            try:
+                simulasyon.log_yaz([], self.log_dosyasi)
+            except OSError as e:
+                messagebox.showerror(
+                    "Log Hatası",
+                    f"Eski log silinemedi veya yeni log oluşturulamadı: {e}"
+                )
+                return
+
             self.harita_havuzu = [{
                 "ad": veri_klasoru.name,
                 "izgara": izgara,
@@ -160,6 +175,11 @@ class DepoRobotuArayuzu:
         self.lbl_log.config(text="Log: Yeni görev başladı.")
 
     def sifirla(self):
+        self.tumunu_calistirma_suruyor = False
+        if self.tumunu_calistirma_after_id is not None:
+            self.root.after_cancel(self.tumunu_calistirma_after_id)
+            self.tumunu_calistirma_after_id = None
+
         self.izgara = copy.deepcopy(self.orijinal_izgara)
         self.durum = simulasyon.yeni_durum(self.izgara, self.baslangic, self.ayarlar)
         self.mevcut_adim = 0
@@ -243,6 +263,7 @@ class DepoRobotuArayuzu:
         self.lbl_carpisma.config(
             text=f"Çarpışma: {self.durum['carpisma']} / {simulasyon.MAX_CARPISMA}"
         )
+        self.lbl_adim.config(text=f"Adım: {self.durum['toplam_adim']}")
         
         if self.mevcut_adim < len(self.komutlar):
             k = self.komutlar[self.mevcut_adim]
@@ -255,6 +276,9 @@ class DepoRobotuArayuzu:
             self.lbl_log.config(text=f"{komut_metin} -> ({self.durum['x']}, {self.durum['y']}) {olay}")
 
     def tus_kontrolu(self, event):
+        if self.tumunu_calistirma_suruyor:
+            return "break"
+
         tus = event.keysym.lower()
         komutlar = {
             "w": ("ILERI", 1),
@@ -304,6 +328,18 @@ class DepoRobotuArayuzu:
             )
         self.haritayi_ciz()
         self.bilgileri_guncelle(olay, komut_metin)
+        try:
+            simulasyon.log_satiri_ekle({
+                "adim": self.durum["toplam_adim"],
+                "komut": f"{komut[0]} {komut[1] if komut[1] is not None else ''}".strip(),
+                "x": self.durum["x"],
+                "y": self.durum["y"],
+                "yon": self.durum["yon"],
+                "batarya": self.durum["batarya"],
+                "olay": olay
+            }, self.log_dosyasi)
+        except OSError as e:
+            messagebox.showerror("Log Hatası", f"Adım log.csv dosyasına yazılamadı: {e}")
 
         if self.durum["teslim"] > teslim_sayisi:
             kalan_kutu = self.toplam_kutu - self.durum["teslim"]
@@ -355,7 +391,28 @@ class DepoRobotuArayuzu:
             and self.mevcut_harita == baslangic_haritasi
         ):
             self.bir_adim_ilerle()
-            self.root.update()
+
+        devam_et = (
+            self.mevcut_adim < len(self.komutlar)
+            and not self.durum["batarya_bitti"]
+            and not self.durum["oyun_bitti"]
+            and not self.gorev_tamamlandi
+            and self.mevcut_harita == self.tumunu_calistirma_haritasi
+        )
+        if devam_et:
+            self.tumunu_calistirma_after_id = self.root.after(
+                10, self._tumunu_calistirma_adimi
+            )
+            return
+
+        self.tumunu_calistirma_suruyor = False
+        if (
+            not self.durum["batarya_bitti"]
+            and not self.durum["oyun_bitti"]
+            and not self.gorev_tamamlandi
+        ):
+            self.btn_adim.config(state=tk.NORMAL)
+            self.btn_tumunu.config(state=tk.NORMAL)
 
 if __name__ == "__main__":
     root = tk.Tk()
