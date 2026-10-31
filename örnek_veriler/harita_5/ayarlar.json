@@ -1,0 +1,8 @@
+{
+    "batarya_kapasitesi": 250,
+    "baslangic_yonu": "D",
+    "adim_maliyeti": 2,
+    "yuk_carpani": 2.5,
+    "donus_maliyeti": 2,
+    "carpisma_cezasi": 30
+}
