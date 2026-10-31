@@ -1,0 +1,21 @@
+{
+    "konum": [
+        6,
+        8
+    ],
+    "yon": "G",
+    "batarya": 37,
+    "yuk": false,
+    "teslim": 4,
+    "carpisma": 0,
+    "toplam_adim": 95,
+    "batarya_bitti": false,
+    "en_cok_ziyaret_edilen": [
+        6,
+        6
+    ],
+    "hatali_satirlar": [
+        48,
+        55
+    ]
+}
