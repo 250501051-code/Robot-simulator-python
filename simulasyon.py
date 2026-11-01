@@ -2,8 +2,6 @@ import json
 import csv
 import os
 
-# Bu dosya arayüz (Tkinter) KESİNLİKLE İÇERMEZ.
-# Sadece kurallar ve mantık burada yer alır.
 
 MAX_CARPISMA = 3
 
